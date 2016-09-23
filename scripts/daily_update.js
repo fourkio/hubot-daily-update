@@ -25,8 +25,8 @@ var moment = require('moment');
 
 module.exports = function(robot) {
 
-    robot.respond(/my update is (.*)/i, function(msg) {
-      var dailyUpdate = msg.match[1];
+    robot.respond(/(my update is|tldr) (.*)/i, function(msg) {
+      var dailyUpdate = msg.match[2];
       if(dailyUpdate.length > 0) {
         var username = msg.envelope.user.name;
         var room = msg.envelope.user.room;
@@ -44,8 +44,8 @@ module.exports = function(robot) {
       }
     });
 
-    robot.respond(/get daily updates by (\w*)/i, function(msg) {
-      var username = msg.match[1];
+    robot.respond(/(get daily updates|tldrs) by (\w*)/i, function(msg) {
+      var username = msg.match[2];
       var room = msg.envelope.user.room;
       var today = getToday();
       var messages = getRoomMessages(room);
@@ -64,20 +64,19 @@ module.exports = function(robot) {
       );
     });
 
-    robot.respond(/get daily updates/i, function (msg) {
+    robot.respond(/(get daily updates|tldrs)/i, function (msg) {
       if(msg.match.input.length === msg.match[0].length){
         var today = getToday();
         msg.send(getDailyUpdates(msg.envelope.user.room, today));
       }
     });
 
-    robot.respond(/get all daily updates for yesterday/i, function (msg) {
+    robot.respond(/(get all daily updates|tldrs) for yesterday/i, function (msg) {
       msg.send(getDailyUpdates(msg.envelope.user.room, getToday(-1)));
     });
 
-    robot.respond(/get all daily updates for last week for ([#|\w|\d|_|-]+)/i, function (msg) {
-      var room = msg.match[1];
-      console.log(room);
+    robot.respond(/(get all daily updates|tldrs) for last week for ([#|\w|\d|_|-]+)/i, function (msg) {
+      var room = msg.match[2];
       var output = '';
       for(var i=7; i>=0; i--){
         output += getDailyUpdates(room, getToday(-i))+'\n';
@@ -85,14 +84,14 @@ module.exports = function(robot) {
       msg.send(output);
     });
 
-    robot.respond(/get all daily updates for (\d+) days ago/i, function (msg) {
-      var day = parseInt(msg.match[1], 10);
+    robot.respond(/(get all daily updates|tldrs) for (\d+) days ago/i, function (msg) {
+      var day = parseInt(msg.match[2], 10);
       msg.send(getDailyUpdates(msg.envelope.user.room, getToday(-day)));
     });
 
-    robot.respond(/remove daily updates on ([\d|-]+) by (\w+)/i, function (msg) {
-      var date = msg.match[1];
-      var username = msg.match[2];
+    robot.respond(/remove (daily updates|tldrs) on ([\d|-]+) by (\w+)/i, function (msg) {
+      var date = msg.match[2];
+      var username = msg.match[3];
       var room = msg.envelope.user.room;
       var roomMessages = getRoomMessages(room);
       if(!(username in roomMessages))
@@ -104,8 +103,8 @@ module.exports = function(robot) {
       msg.send('removed all updates for '+username+' on '+date);
     });
 
-    robot.respond(/remove daily updates by (\w+)/i, function (msg) {
-      var username = msg.match[1];
+    robot.respond(/remove (daily updates|tldrs) by (\w+)/i, function (msg) {
+      var username = msg.match[2];
       var room = msg.envelope.user.room;
       var roomMessages = getRoomMessages(room);
       if(!(username in roomMessages))
@@ -115,7 +114,7 @@ module.exports = function(robot) {
       msg.send('removed all updates for '+username);
     });
 
-    robot.respond(/remove daily updates for room/i, function (msg) {
+    robot.respond(/remove (daily updates|tldrs) for room/i, function (msg) {
       var room = msg.envelope.user.room;
       saveRoomMessages(room, null);
       msg.send('removed all updates for '+room);
@@ -123,7 +122,6 @@ module.exports = function(robot) {
 
     function getDailyUpdates(room, currentDay) {
       var messages = getRoomMessages(room);
-
       if(_.keys(messages).length === 0) {
         return 'No updates for '+currentDay+' yet';
       }
@@ -131,7 +129,7 @@ module.exports = function(robot) {
       var output = '';
       var day;
       _.each(messages, function (days, username) {
-        output += 'Updates for '+username+' on '+currentDay+':\n';
+        output += '\nUpdates for '+username+' on '+currentDay+':\n';
         day = currentDay in days ? days[currentDay] : [];
         if(day.length > 0){
           output += renderMessages(day);
@@ -140,7 +138,6 @@ module.exports = function(robot) {
         }
         output += '\n';
       });
-
       return output;
     }
 
